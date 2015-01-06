@@ -18,7 +18,7 @@ board.on "ready", ->
       wheels.right.center()
       return
 
-    forward: ->
+    back: ->
       wheels.left.ccw()
       wheels.right.cw()
       console.log "goForward"
@@ -36,7 +36,7 @@ board.on "ready", ->
       console.log "turnRight"
       return
 
-    back: ->
+    forward: ->
       wheels.left.cw()
       wheels.right.ccw()
       return
