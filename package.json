@@ -9,6 +9,7 @@
   "author": "Mel Klimushyn <mklimushyn@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "johnny-five": "^0.8.37"
+    "johnny-five": "^0.8.37",
+    "lodash": "^2.4.1"
   }
 }

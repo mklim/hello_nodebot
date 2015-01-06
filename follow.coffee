@@ -1,5 +1,6 @@
 five = require("johnny-five")
 fs = require("fs")
+_ = require("lodash")
 board = new five.Board()
 stdin = process.stdin
 stdin.setRawMode true
@@ -66,16 +67,15 @@ board.on "ready", ->
     calibrating = true
     if fs.existsSync(calibrationFile)
       eyes.loadCalibration JSON.parse(fs.readFileSync(calibrationFile))
-      console.log "Loaded calibration file."
-      callback()
-      return
-    console.log "Calibrating.  Press any key when finished..."
-    eyes.calibrateUntil ->
-      not calibrating
+      console.log "Loaded calibration file. Press any key to begin..."
+    else
+      console.log "Calibrating.  Press any key when finished..."
+      eyes.calibrateUntil ->
+        not calibrating
 
     stdin.once "keypress", ->
       calibrating = false
-      console.log "Finished calibrating."
+      console.log "Go!"
       fs.writeFile calibrationFile, JSON.stringify(eyes.calibration)
       callback()
       return
@@ -83,6 +83,7 @@ board.on "ready", ->
 
   drive = ->
     running = true
+    lastLineTime = Date.now()
 
     stdin.on "keypress", (chunk, key) ->
       return  if not key or key.name isnt "space"
@@ -93,6 +94,22 @@ board.on "ready", ->
         console.log "Stopped running. Press the spacebar to start again..."
       return
 
+    eyes.on "data", (err, data) ->
+      maxes = eyes.calibration.max
+      sensorsOnLine = _.filter(data, (sensor, i) ->
+        sensor > maxes[i] - 100
+      )
+      if sensorsOnLine.length == maxes.length
+        console.log "on line"
+        now = Date.now()
+        if now - lastLineTime >= 1000
+          console.log "this line is new"
+          running = false
+          wheels.stop()
+        else
+          console.log "waiting to get off line"
+          lastLineTime = now
+
     eyes.on "line", (err, line) ->
       return  unless running
       if line < 2100
@@ -100,8 +117,9 @@ board.on "ready", ->
       else if line > 3100
         wheels.pivotRight()
       else
+        console.log "moving forward"
         wheels.forward()
-      console.log line
+      stopAtNextLine = true
       return
 
 
