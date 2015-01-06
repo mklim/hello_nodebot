@@ -75,9 +75,9 @@ board.on "ready", ->
 
   eyes.on "line", (err, line) ->
     return  unless running
-    if line < 1000
+    if line < 2100
       wheels.pivotLeft()
-    else if line > 4000
+    else if line > 3500
       wheels.pivotRight()
     else
       wheels.forward()
