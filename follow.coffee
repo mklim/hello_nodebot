@@ -85,10 +85,19 @@ board.on "ready", ->
     running = true
     lastLineTime = Date.now()
 
+    onLine = ->
+      now = Date.now()
+      if now - lastLineTime >= 1000
+        running = false
+        wheels.stop()
+      else
+        lastLineTime = now
+
     stdin.on "keypress", (chunk, key) ->
-      return  if not key or key.name isnt "space"
+      return if not key or key.name isnt "space"
       calibrating = false
       running = not running
+      lastLineTime = Date.now()
       unless running
         wheels.stop()
         console.log "Stopped running. Press the spacebar to start again..."
@@ -100,15 +109,7 @@ board.on "ready", ->
         sensor > maxes[i] - 100
       )
       if sensorsOnLine.length == maxes.length
-        console.log "on line"
-        now = Date.now()
-        if now - lastLineTime >= 1000
-          console.log "this line is new"
-          running = false
-          wheels.stop()
-        else
-          console.log "waiting to get off line"
-          lastLineTime = now
+        onLine()
 
     eyes.on "line", (err, line) ->
       return  unless running
@@ -117,7 +118,6 @@ board.on "ready", ->
       else if line > 3100
         wheels.pivotRight()
       else
-        console.log "moving forward"
         wheels.forward()
       stopAtNextLine = true
       return
