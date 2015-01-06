@@ -1,12 +1,12 @@
 {
-  "name": "nodebot",
+  "name": "line-following-nodebot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.coffee",
+  "main": "follow.coffee",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Mel Klimushyn",
+  "author": "Mel Klimushyn <mklimushyn@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "johnny-five": "^0.8.37"

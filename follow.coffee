@@ -1,4 +1,5 @@
 five = require("johnny-five")
+fs = require("fs")
 board = new five.Board()
 stdin = process.stdin
 stdin.setRawMode true
@@ -41,7 +42,6 @@ board.on "ready", ->
       wheels.right.ccw()
       return
 
-
   eyes = new five.IR.Reflect.Array(
     emitter: 13
     pins: [
@@ -53,36 +53,57 @@ board.on "ready", ->
       "A5"
     ]
   )
-  calibrating = true
-  running = false
-  wheels.stop()
 
-  # Start calibration
-  # All sensors need to see the extremes so they can understand what a line is,
-  # so move the eyes over the materials that represent lines and not lines during calibration.
-  eyes.calibrateUntil ->
-    not calibrating
+  calibrationFile = "calibration.json"
 
-  console.log "Press the spacebar to end calibration and start running..."
-  stdin.on "keypress", (chunk, key) ->
-    return  if not key or key.name isnt "space"
-    calibrating = false
-    running = not running
-    unless running
-      wheels.stop()
-      console.log "Stopped running. Press the spacebar to start again..."
+  init = ->
+    eyes.enable()
+    wheels.stop()
+    calibrate(drive)
+
+  calibrate = (callback) ->
+    savedCalibration = undefined
+    calibrating = true
+    if fs.existsSync(calibrationFile)
+      eyes.loadCalibration JSON.parse(fs.readFileSync(calibrationFile))
+      console.log "Loaded calibration file."
+      callback()
+      return
+    console.log "Calibrating.  Press any key when finished..."
+    eyes.calibrateUntil ->
+      not calibrating
+
+    stdin.once "keypress", ->
+      calibrating = false
+      console.log "Finished calibrating."
+      fs.writeFile calibrationFile, JSON.stringify(eyes.calibration)
+      callback()
+      return
     return
 
-  eyes.on "line", (err, line) ->
-    return  unless running
-    if line < 2100
-      wheels.pivotLeft()
-    else if line > 3500
-      wheels.pivotRight()
-    else
-      wheels.forward()
-    console.log line
-    return
+  drive = ->
+    running = true
 
-  eyes.enable()
+    stdin.on "keypress", (chunk, key) ->
+      return  if not key or key.name isnt "space"
+      calibrating = false
+      running = not running
+      unless running
+        wheels.stop()
+        console.log "Stopped running. Press the spacebar to start again..."
+      return
+
+    eyes.on "line", (err, line) ->
+      return  unless running
+      if line < 2100
+        wheels.pivotLeft()
+      else if line > 3100
+        wheels.pivotRight()
+      else
+        wheels.forward()
+      console.log line
+      return
+
+
+  init()
   return
